@@ -28,21 +28,21 @@
 
 ---
 
-## Resumen Ejecutivo
+## Resumen 
 
 Este repositorio implementa un sistema de **inferencia bayesiana secuencial** para la estimación de una tasa de conversión (o de riesgo) binaria latente, denotada θ, a partir de un flujo de eventos observados en lotes. El núcleo analítico se basa en el modelo conjugado **Beta-Binomial**, lo que permite actualizar la distribución posterior de θ de forma cerrada (sin necesidad de métodos numéricos) a medida que llegan nuevos datos. Adicionalmente, se incorpora un módulo de validación basado en **Muestreo de Monte Carlo vía Cadenas de Markov (MCMC)**, utilizando el muestreador **NUTS** (No-U-Turn Sampler) implementado en `PyMC`, con el objetivo de contrastar empíricamente la solución analítica contra una aproximación numérica independiente.
 
 El sistema está orientado a un caso de uso típico en analítica de producto y gestión de riesgo: la estimación temprana y con cuantificación de incertidumbre de una tasa de éxito binaria (conversión, adopción, incidencia de riesgo, tasa de defecto, etc.), donde la disponibilidad de datos es limitada y llega de forma incremental.
 
-## Motivación y Contexto del Problema
+## Contexto del Problema
 
-En escenarios de negocio y de ingeniería (pruebas A/B, control de calidad, detección temprana de riesgo operativo, tasas de adopción de features), es común enfrentar la necesidad de estimar una proporción desconocida θ con **datos escasos y que llegan de forma incremental**. Los enfoques frecuentistas clásicos (estimación puntual vía máxima verosimilitud, intervalos de confianza asintóticos) presentan limitaciones relevantes en este contexto:
+En escenarios de negocio y de ingeniería (pruebas A/B, control de calidad, detección temprana de riesgo operativo, tasas de adopción de nuevas funcionalidades), es común enfrentar la necesidad de estimar una proporción desconocida θ con **datos escasos y que llegan de forma incremental**. Los enfoques frecuentistas clásicos (estimación puntual vía máxima verosimilitud, intervalos de confianza asintóticos) presentan limitaciones relevantes en este contexto:
 
 - Requieren tamaños de muestra considerables para que las aproximaciones asintóticas sean válidas.
 - No incorporan de manera natural conocimiento previo (*prior knowledge*) sobre el fenómeno.
 - No proveen una interpretación probabilística directa sobre el parámetro de interés (un intervalo de confianza no equivale a "la probabilidad de que θ esté en este rango").
 
-El enfoque bayesiano resuelve estas limitaciones de forma natural: permite incorporar conocimiento previo mediante una distribución *prior*, actualizarlo de forma exacta y secuencial conforme llegan los datos, y obtener enunciados probabilísticos directos sobre θ (p. ej., "la probabilidad de que la tasa de conversión supere el 15% es 0.87"), los cuales son directamente accionables en un contexto de toma de decisiones.
+El enfoque bayesiano resuelve estas limitaciones de forma natural: permite incorporar conocimiento previo mediante una distribución *prior*, actualizarlo de forma exacta y secuencial conforme llegan los datos, y obtener enunciados probabilísticos directos sobre θ (por ejemplo, "la probabilidad de que la tasa de conversión supere el 15% es 0.87"), los cuales son directamente accionables en un contexto de toma de decisiones.
 
 ## Fundamento Estadístico
 
@@ -98,16 +98,18 @@ donde F_Beta es la función de distribución acumulada de la Beta posterior. Est
 
 ## Arquitectura del Repositorio
 
-```text
+```
 Inferencia_Bayesiana/
-├── main.py              # Orquestación de la CLI y del flujo de ejecución end-to-end
-├── bayesian_model.py    # Clase BayesianUpdater: actualización conjugada y validación MCMC
-├── data_simulator.py    # Clase DataStreamer: simulación del flujo de eventos binarios
-├── visualization.py     # Funciones de graficación (prior/posterior, HDI, evolución)
-├── tests/               # Suite de pruebas unitarias (pytest)
-├── outputs/             # Artefactos generados: gráficos y resúmenes por ejecución
-├── requirements.txt     # Especificación de dependencias y versiones
-└── README.md            # Documentación del proyecto
+├── main.py                  # Orquestación de la CLI y del flujo de ejecución end-to-end
+├── bayesian_model.py         # Clase BayesianUpdater: actualización conjugada y validación MCMC
+├── data_simulator.py         # Clase DataStreamer: simulación del flujo de eventos binarios
+├── visualization.py          # Funciones de graficación (prior/posterior, HDI, evolución)
+├── tests/                    # Suite de pruebas unitarias (pytest)
+├── outputs/                  # Artefactos generados: gráficos y resúmenes por ejecución
+├── requirements.txt           # Especificación de dependencias y versiones
+└── README.md                  # Documentación del proyecto
+```
+
 **Separación de responsabilidades:**
 
 | Módulo | Responsabilidad | Principales dependencias |
@@ -139,7 +141,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> **Nota de compatibilidad:** Las versiones recientes de `arviz`/`arviz-stats` (≥ 1.0) renombraron el argumento `hdi_prob` a `prob` en la función `az.hdi()`. Si se utiliza una versión de `arviz` posterior a la especificada en `requirements.txt`, verificar la firma de dicha función para evitar errores de ejecución (`TypeError: hdi got an unexpected keyword argument`).
+> **Nota de compatibilidad:** las versiones recientes de `arviz` / `arviz-stats` (≥ 1.0) renombraron el argumento `hdi_prob` a `prob` en la función `az.hdi()`. Si se utiliza una versión de `arviz` posterior a la especificada en `requirements.txt`, verificar la firma de dicha función antes de ejecutar, para evitar errores del tipo `TypeError: hdi got an unexpected keyword argument`.
 
 ## Uso de la Interfaz de Línea de Comandos
 
@@ -159,21 +161,25 @@ Durante la ejecución, el sistema imprime en consola un resumen estadístico por
 
 ## Parámetros de Configuración
 
-| Parámetro | Descripción | Tipo | Valor por defecto (referencial) |
-|---|---|---|---|
-| `--theta-true` | Tasa de conversión/riesgo real utilizada por el simulador para generar los datos | `float` | — |
-| `--alpha-0` | Parámetro α del prior Beta | `float` | — |
-| `--beta-0` | Parámetro β del prior Beta | `float` | — |
-| `--batch-size` | Número de ensayos (`n`) por lote simulado | `int` | — |
-| `--n-batches` | Número total de lotes a procesar secuencialmente | `int` | — |
-| `--threshold` | Umbral de decisión τ sobre el cual se calcula P(θ > τ \| datos) | `float` | — |
+| Parámetro | Descripción | Tipo |
+|---|---|---|
+| `--theta-true` | Tasa de conversión/riesgo real utilizada por el simulador para generar los datos (solo disponible en modo de simulación experimental) | `float` |
+| `--alpha-0` | Parámetro α del prior Beta | `float` |
+| `--beta-0` | Parámetro β del prior Beta | `float` |
+| `--batch-size` | Número de ensayos (`n`) por lote simulado | `int` |
+| `--n-batches` | Número total de lotes a procesar secuencialmente | `int` |
+| `--threshold` | Umbral de decisión τ sobre el cual se calcula P(θ > τ \| datos) | `float` |
 
-> Los valores por defecto exactos, así como el listado completo de flags disponibles, pueden consultarse directamente en la ayuda de la CLI: `python main.py --help`.
+> El listado completo y actualizado de flags disponibles, junto con sus valores por defecto exactos, puede consultarse en cualquier momento mediante:
+>
+> ```bash
+> python main.py --help
+> ```
 
 ## Salidas del Sistema
 
 - **Consola:** tabla de resumen estadístico por iteración (media, mediana, HDI 95%, P(θ > τ)), y comparación entre la solución analítica y la validación MCMC (media posterior, R-hat, ESS).
-- **`outputs/`:** gráficos de la evolución de la distribución posterior a lo largo de los lotes, con marcación del HDI 95% y de la tasa real θ_true utilizada por el simulador (disponible únicamente en el contexto de validación experimental, no observable en un escenario real de producción).
+- **`outputs/`:** gráficos de la evolución de la distribución posterior a lo largo de los lotes, con marcación del HDI 95% y de la tasa real θ_true utilizada por el simulador (esta última visible únicamente en el contexto de validación experimental, no observable en un escenario real de producción).
 
 ## Pruebas Unitarias
 
@@ -192,7 +198,7 @@ Se recomienda ejecutar la suite de pruebas tras cualquier modificación al núcl
 3. **Especificación del prior:** la elección de (α₀, β₀) incide directamente en la velocidad de convergencia de la posterior, particularmente relevante cuando el tamaño muestral acumulado es reducido.
 4. **Ausencia de covariables:** el modelo actual es univariante y no incorpora heterogeneidad explicada por variables explicativas (segmentación por canal, cohorte, geografía, etc.).
 
-## Futuro
+##  Futuro
 
 - Incorporación de un factor de olvido (*exponential forgetting*) sobre los parámetros del prior para escenarios no estacionarios.
 - Extensión a un modelo jerárquico Beta-Binomial para estimación simultánea de múltiples grupos o segmentos con *partial pooling*.
@@ -204,7 +210,8 @@ Se recomienda ejecutar la suite de pruebas tras cualquier modificación al núcl
 - Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., & Rubin, D. B. (2013). *Bayesian Data Analysis* (3rd ed.). Chapman and Hall/CRC.
 - Kruschke, J. K. (2015). *Doing Bayesian Data Analysis: A Tutorial with R, JAGS, and Stan* (2nd ed.). Academic Press.
 - Hoffman, M. D., & Gelman, A. (2014). The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo. *Journal of Machine Learning Research*, 15(1), 1593-1623.
-- Documentación oficial de [PyMC](https://www.pymc.io/) y [ArviZ](https://python.arviz.org/).
+- Documentación oficial de PyMC: https://www.pymc.io/
+- Documentación oficial de ArviZ: https://python.arviz.org/
 
 ## Licencia
 
