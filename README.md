@@ -1,6 +1,5 @@
 <img width="1920" height="1080" alt="miniaturas japonesas" src="https://github.com/user-attachments/assets/96b31c78-f90f-4cd3-ab79-fa95c92a6e61" />
 
-
 # Inferencia Bayesiana: Actualización Secuencial de Tasas de Conversión mediante el Modelo Conjugado Beta-Binomial
 
 [![Python](https://img.shields.io/badge/python-%3E%3D3.9-blue)]()
@@ -29,13 +28,13 @@
 
 ---
 
-## Resumen 
+## Resumen Ejecutivo
 
 Este repositorio implementa un sistema de **inferencia bayesiana secuencial** para la estimación de una tasa de conversión (o de riesgo) binaria latente, denotada θ, a partir de un flujo de eventos observados en lotes. El núcleo analítico se basa en el modelo conjugado **Beta-Binomial**, lo que permite actualizar la distribución posterior de θ de forma cerrada (sin necesidad de métodos numéricos) a medida que llegan nuevos datos. Adicionalmente, se incorpora un módulo de validación basado en **Muestreo de Monte Carlo vía Cadenas de Markov (MCMC)**, utilizando el muestreador **NUTS** (No-U-Turn Sampler) implementado en `PyMC`, con el objetivo de contrastar empíricamente la solución analítica contra una aproximación numérica independiente.
 
 El sistema está orientado a un caso de uso típico en analítica de producto y gestión de riesgo: la estimación temprana y con cuantificación de incertidumbre de una tasa de éxito binaria (conversión, adopción, incidencia de riesgo, tasa de defecto, etc.), donde la disponibilidad de datos es limitada y llega de forma incremental.
 
-## Contexto del Problema
+## Motivación y Contexto del Problema
 
 En escenarios de negocio y de ingeniería (pruebas A/B, control de calidad, detección temprana de riesgo operativo, tasas de adopción de features), es común enfrentar la necesidad de estimar una proporción desconocida θ con **datos escasos y que llegan de forma incremental**. Los enfoques frecuentistas clásicos (estimación puntual vía máxima verosimilitud, intervalos de confianza asintóticos) presentan limitaciones relevantes en este contexto:
 
@@ -99,16 +98,16 @@ donde F_Beta es la función de distribución acumulada de la Beta posterior. Est
 
 ## Arquitectura del Repositorio
 
+```text
 Inferencia_Bayesiana/
-├── main.py # Orquestación de la CLI y del flujo de ejecución end-to-end
-├── bayesian_model.py # Clase BayesianUpdater: actualización conjugada y validación MCMC
-├── data_simulator.py # Clase DataStreamer: simulación del flujo de eventos binarios
-├── visualization.py # Funciones de graficación (prior/posterior, HDI, evolución)
-├── tests/ # Suite de pruebas unitarias (pytest)
-├── outputs/ # Artefactos generados: gráficos y resúmenes por ejecución
-├── requirements.txt # Especificación de dependencias y versiones
-└── README.md # Documentación del proyecto
-
+├── main.py              # Orquestación de la CLI y del flujo de ejecución end-to-end
+├── bayesian_model.py    # Clase BayesianUpdater: actualización conjugada y validación MCMC
+├── data_simulator.py    # Clase DataStreamer: simulación del flujo de eventos binarios
+├── visualization.py     # Funciones de graficación (prior/posterior, HDI, evolución)
+├── tests/               # Suite de pruebas unitarias (pytest)
+├── outputs/             # Artefactos generados: gráficos y resúmenes por ejecución
+├── requirements.txt     # Especificación de dependencias y versiones
+└── README.md            # Documentación del proyecto
 **Separación de responsabilidades:**
 
 | Módulo | Responsabilidad | Principales dependencias |
